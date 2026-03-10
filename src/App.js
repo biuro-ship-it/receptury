@@ -8,14 +8,14 @@ import {
   KeyRound, Download 
 } from 'lucide-react';
 
-// --- KONFIGURACJA FIREBASE ---
+// --- TWOJA PRAWDZIWA KONFIGURACJA FIREBASE ---
 const firebaseConfig = {
-  apiKey: "TWÓJ_API_KEY",
-  authDomain: "TWÓJ_PROJEKT.firebaseapp.com",
-  projectId: "TWÓJ_PROJEKT_ID",
-  storageBucket: "TWÓJ_PROJEKT.appspot.com",
-  messagingSenderId: "NUMER_SENDERID",
-  appId: "TWÓJ_APP_ID"
+  apiKey: "AIzaSyBHj9veFIsL4H-g9n5_WHQuQLzmtn6YzkI",
+  authDomain: "kalkulator-masarski.firebaseapp.com",
+  projectId: "kalkulator-masarski",
+  storageBucket: "kalkulator-masarski.firebasestorage.app",
+  messagingSenderId: "75429008764",
+  appId: "1:75429008764:web:125be1434f1865864940f9"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -55,7 +55,7 @@ const App = () => {
   });
 
   useEffect(() => {
-    signInAnonymously(auth).catch(err => console.error(err));
+    signInAnonymously(auth).catch(err => console.error("Błąd Auth:", err));
     const unsubscribe = onAuthStateChanged(auth, setUser);
     return () => unsubscribe();
   }, []);
@@ -98,7 +98,8 @@ const App = () => {
     try {
       await setDoc(doc(db, 'recipes', id), { ...newRecipe, id });
       setIsAdmin(false);
-    } catch (err) { console.error(err); }
+      setNewRecipe({ name: '', ratios: { class1: 0.25, class2: 0.25, class3: 0.25, class4: 0.25 }, spices: [{ id: Date.now(), name: 'Sól', ratio: 18 }] });
+    } catch (err) { console.error("Błąd zapisu:", err); alert("Błąd zapisu! Sprawdź ustawienia Firestore."); }
   };
 
   const meatClasses = [
