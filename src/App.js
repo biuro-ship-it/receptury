@@ -167,7 +167,7 @@ const App = () => {
         @media print {
           .no-print { display: none !important; }
           .print-only { display: block !important; }
-          body { background: white; color: black; }
+          body { background: white !important; color: black !important; }
         }
         .print-only { display: none; }
       `}</style>
@@ -175,10 +175,7 @@ const App = () => {
       {showPrintTip && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 border-2 border-slate-700">
           <div className="bg-amber-500 p-2 rounded-full text-slate-900"><Info size={24} /></div>
-          <div>
-            <p className="font-bold">Przygotowywanie PDF...</p>
-            <p className="text-xs text-slate-400">Wybierz <strong>"Zapisz jako PDF"</strong> w polu Drukarka.</p>
-          </div>
+          <div><p className="font-bold">Przygotowywanie PDF...</p><p className="text-xs text-slate-400">Wybierz "Zapisz jako PDF".</p></div>
         </div>
       )}
 
@@ -191,26 +188,16 @@ const App = () => {
               <p className="text-slate-400 text-xs font-semibold uppercase tracking-widest">Profesjonalna Baza Receptur</p>
             </div>
           </div>
-
           <div className="flex items-center gap-3 w-full md:w-auto">
             <div className="flex-1 md:min-w-[240px]">
               <div className="relative">
-                <select 
-                  className="w-full bg-slate-900 border-2 border-slate-600 text-white rounded-xl py-3 px-4 appearance-none cursor-pointer focus:ring-4 focus:ring-slate-500 font-bold"
-                  value={selectedKey}
-                  onChange={(e) => setSelectedKey(e.target.value)}
-                >
-                  {Object.entries(recipes).map(([key, r]) => (
-                    <option key={key} value={key}>{r.name}</option>
-                  ))}
+                <select className="w-full bg-slate-900 border-2 border-slate-600 text-white rounded-xl py-3 px-4 appearance-none cursor-pointer font-bold" value={selectedKey} onChange={(e) => setSelectedKey(e.target.value)}>
+                  {Object.entries(recipes).map(([key, r]) => (<option key={key} value={key}>{r.name}</option>))}
                 </select>
                 <ChevronDown className="absolute right-3 top-3.5 text-slate-400 pointer-events-none" size={20} />
               </div>
             </div>
-            <button 
-              onClick={() => isAdmin ? setIsAdmin(false) : setIsAuthModalOpen(true)}
-              className={`p-3.5 rounded-xl transition-all shadow-lg border-2 ${isAdmin ? 'bg-amber-600 border-amber-700 text-white' : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-white'}`}
-            >
+            <button onClick={() => isAdmin ? setIsAdmin(false) : setIsAuthModalOpen(true)} className={`p-3.5 rounded-xl border-2 ${isAdmin ? 'bg-amber-600 border-amber-700 text-white' : 'bg-slate-900 border-slate-700 text-slate-400'}`}>
               {isAdmin ? <Unlock size={24} /> : <Lock size={24} />}
             </button>
           </div>
@@ -218,20 +205,11 @@ const App = () => {
 
         {isAuthModalOpen && (
           <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl">
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center mx-auto mb-4"><KeyRound size={32} /></div>
-                <h3 className="text-xl font-bold text-slate-800">Panel Administratora</h3>
-              </div>
-              <input 
-                type="password" 
-                className="w-full border-2 border-slate-100 rounded-xl p-4 text-center text-xl font-bold focus:border-slate-500 outline-none mb-4"
-                placeholder="Hasło..."
-                value={passwordInput}
-                onChange={e => setPasswordInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleAdminAccess()}
-              />
-              {authError && <p className="text-red-500 text-center text-xs font-bold mb-4">{authError}</p>}
+            <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center">
+              <div className="w-16 h-16 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center mx-auto mb-4"><KeyRound size={32} /></div>
+              <h3 className="text-xl font-bold text-slate-800 mb-6">Panel Administratora</h3>
+              <input type="password" className="w-full border-2 border-slate-100 rounded-xl p-4 text-center text-xl font-bold mb-4" placeholder="Hasło..." value={passwordInput} onChange={e => setPasswordInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAdminAccess()} />
+              {authError && <p className="text-red-500 text-xs font-bold mb-4">{authError}</p>}
               <div className="flex gap-3">
                 <button onClick={() => setIsAuthModalOpen(false)} className="flex-1 py-3 font-bold text-slate-400">Anuluj</button>
                 <button onClick={handleAdminAccess} className="flex-1 bg-slate-800 text-white py-3 rounded-xl font-bold">WEJDŹ</button>
@@ -243,149 +221,24 @@ const App = () => {
         {isAdmin ? (
           <div className="bg-white rounded-3xl p-6 md:p-10 shadow-xl border border-slate-200">
              <div className="flex justify-between items-center mb-10 pb-6 border-b border-slate-100">
-                <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
-                  <Settings className="text-slate-400" size={28} /> ZARZĄDZANIE RECEPTURAMI
-                </h2>
+                <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-3"><Settings size={28} /> ZARZĄDZANIE</h2>
                 <button onClick={() => setIsAdmin(false)} className="p-2 text-slate-300 hover:text-red-500"><X size={32} /></button>
              </div>
              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                 <div className="space-y-8">
                   <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Nazwa Kiełbasy</label>
-                    <input 
-                      type="text" 
-                      className="w-full border-2 border-slate-100 rounded-xl p-4 text-xl font-bold text-slate-800 outline-none"
-                      placeholder="np. Podwawelska Domowa"
-                      value={newRecipe.name}
-                      onChange={e => setNewRecipe({...newRecipe, name: e.target.value})}
-                    />
+                    <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Nazwa</label>
+                    <input type="text" className="w-full border-2 border-slate-100 rounded-xl p-4 text-xl font-bold" value={newRecipe.name} onChange={e => setNewRecipe({...newRecipe, name: e.target.value})} />
                   </div>
                   <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200">
-                    <h3 className="font-bold text-slate-700 mb-6 uppercase text-xs tracking-wider">Proporcje Mięsa (%)</h3>
-                    <div className="space-y-6">
-                      {meatClasses.map((c) => (
-                        <div key={c.id} className="space-y-2">
-                          <div className="flex justify-between text-xs font-bold text-slate-500">
-                            <span>{c.label}</span>
-                            <span className="text-slate-800">{(newRecipe.ratios[c.id] * 100).toFixed(0)}%</span>
-                          </div>
-                          <input 
-                            type="range" min="0" max="1" step="0.05"
-                            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-600"
-                            value={newRecipe.ratios[c.id]}
-                            onChange={e => {
-                              const val = parseFloat(e.target.value);
-                              setNewRecipe({...newRecipe, ratios: {...newRecipe.ratios, [c.id]: val}});
-                            }}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-6">
-                   <div className="flex justify-between items-center mb-2">
-                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest">Przyprawy (g/kg)</label>
-                    <button 
-                      onClick={() => setNewRecipe({...newRecipe, spices: [...newRecipe.spices, { id: Date.now(), name: '', ratio: 0 }]})}
-                      className="flex items-center gap-2 text-xs font-bold bg-slate-800 text-white px-4 py-2 rounded-lg"
-                    ><Plus size={16} /> DODAJ</button>
-                  </div>
-                  <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2">
-                    {newRecipe.spices.map((spice, idx) => (
-                      <div key={spice.id} className="flex gap-2 p-2 bg-slate-50 rounded-xl border border-slate-100">
-                        <input className="flex-1 bg-transparent text-sm font-bold text-slate-700 outline-none" placeholder="Składnik..." value={spice.name} onChange={e => {
-                            const updated = [...newRecipe.spices];
-                            updated[idx].name = e.target.value;
-                            setNewRecipe({...newRecipe, spices: updated});
-                        }} />
-                        <input type="number" step="0.1" className="w-20 bg-white border border-slate-200 rounded-lg p-2 text-sm font-bold text-slate-800" value={spice.ratio} onChange={e => {
-                            const updated = [...newRecipe.spices];
-                            updated[idx].ratio = parseFloat(e.target.value) || 0;
-                            setNewRecipe({...newRecipe, spices: updated});
-                        }} />
-                        <button onClick={() => setNewRecipe({...newRecipe, spices: newRecipe.spices.filter(s => s.id !== spice.id)})} className="text-slate-300 hover:text-red-500 p-2"><Trash2 size={18} /></button>
+                    <h3 className="font-bold text-slate-700 mb-6 uppercase text-xs">Proporcje Mięsa (%)</h3>
+                    {meatClasses.map((c) => (
+                      <div key={c.id} className="mb-4">
+                        <div className="flex justify-between text-xs font-bold mb-1"><span>{c.label}</span><span>{(newRecipe.ratios[c.id] * 100).toFixed(0)}%</span></div>
+                        <input type="range" min="0" max="1" step="0.05" className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" value={newRecipe.ratios[c.id]} onChange={e => setNewRecipe({...newRecipe, ratios: {...newRecipe.ratios, [c.id]: parseFloat(e.target.value)}})} />
                       </div>
                     ))}
                   </div>
-                  <button onClick={handleSaveToDB} className="w-full bg-slate-800 text-white font-bold py-5 rounded-2xl shadow-xl flex items-center justify-center gap-3"><Save size={24} /> ZAPISZ W BAZIE</button>
-                </div>
-             </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <section className="lg:col-span-7 space-y-6 no-print">
-              <div className="bg-white rounded-3xl p-6 md:p-10 shadow-xl border border-slate-200">
-                <div className="mb-10 p-8 bg-slate-800 rounded-[2.5rem] shadow-lg">
-                   <label className="block text-xs font-bold uppercase tracking-[0.2em] mb-4 text-slate-400">Łączna masa mięsa (kg)</label>
-                   <input type="number" className="w-full bg-slate-700 border-b-4 border-slate-500 text-white rounded-2xl py-6 px-8 text-5xl font-bold focus:outline-none" placeholder="0.0" onChange={(e) => setTotalTarget(parseFloat(e.target.value) || 0)} />
                 </div>
                 <div className="space-y-6">
-                  {meatClasses.map((cls) => (
-                    <div key={cls.id} className="p-4 bg-slate-50/50 rounded-2xl border border-transparent hover:border-slate-200 transition-all">
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl bg-white p-2 rounded-xl shadow-sm border border-slate-100">{cls.icon}</span>
-                          <div>
-                            <span className="font-bold text-slate-800">{cls.label}</span>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase">{cls.sub}</p>
-                          </div>
-                        </div>
-                        <span className="text-[11px] font-bold text-slate-500">Sugerowane: {(totalTarget * (recipe.ratios?.[cls.id] || 0)).toFixed(2)} kg</span>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <input type="number" step="0.01" className="w-full bg-white border-2 border-slate-100 rounded-xl py-3 px-4 text-xl font-bold" value={classWeights[cls.id] || ''} onChange={(e) => setClassWeights({...classWeights, [cls.id]: parseFloat(e.target.value) || 0})} />
-                        <input type="text" className="w-full bg-slate-100 rounded-xl py-3 px-4 text-sm font-bold" placeholder="Uwagi do mięsa..." value={classNotes[cls.id]} onChange={(e) => setClassNotes({...classNotes, [cls.id]: e.target.value})} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-12 p-8 bg-slate-900 rounded-[2rem] flex justify-between items-center text-white">
-                  <span className="text-4xl font-bold">{currentTotal.toFixed(2)} <span className="text-lg opacity-40">kg</span></span>
-                </div>
-              </div>
-            </section>
-
-            <section className="lg:col-span-5">
-              <div className="bg-white rounded-3xl p-6 md:p-10 shadow-xl border border-slate-200 sticky top-8 print:relative print:shadow-none print:border-none print:p-0">
-                <div className="flex items-center justify-between mb-8 no-print">
-                  <div className="flex items-center gap-3"><Beaker className="text-slate-600" size={24} /><h2 className="text-xl font-bold text-slate-800 uppercase">Przepis</h2></div>
-                  <button onClick={handlePrint} className="flex items-center gap-2 bg-slate-800 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-slate-900 transition-all shadow-md"><Download size={18} /> PDF</button>
-                </div>
-
-                <div className="print-only mb-12 border-b-2 border-slate-900 pb-6 text-center">
-                   <h1 className="text-3xl font-black uppercase mb-2">RECEPTURA MASARSKA</h1>
-                   <p className="text-slate-600 font-bold">Kiełbasa: {recipe.name}</p>
-                </div>
-
-                {!calculatedSpices ? (
-                  <div className="h-64 flex flex-col items-center justify-center text-slate-300 text-center border-4 border-dashed border-slate-50 rounded-[3rem] no-print">
-                    <Calculator size={56} className="mb-4 opacity-10" />
-                    <p className="font-bold italic text-slate-400 uppercase tracking-widest">WPISZ WAGĘ MIĘSA</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="mb-6 p-6 bg-slate-50 rounded-3xl border-l-8 border-slate-800 print:bg-white print:border-l-4">
-                      <h4 className="font-bold text-xl text-slate-800 mb-1 uppercase">{recipe.name}</h4>
-                      <p className="text-xs text-slate-500 italic mb-4">"{recipe.description}"</p>
-                      <div className="flex flex-wrap gap-2">
-                        {meatClasses.filter(cls => (recipe.ratios?.[cls.id] || 0) > 0).map(cls => (
-                          <div key={cls.id} className="bg-white border px-3 py-1 rounded-lg text-[10px] font-bold">
-                             <span className="text-slate-800">{(recipe.ratios[cls.id] * 100).toFixed(0)}%</span> {cls.label}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      {calculatedSpices.map((s) => (
-                        <div key={s.id} className={`flex items-center justify-between p-4 rounded-xl border ${s.id === 'salt' ? 'bg-slate-800 text-white print:bg-slate-100 print:text-black' : 'bg-white'}`}>
-                          <span className="font-bold text-sm">{s.name}</span>
-                          <span className="text-xl font-black">{s.amount} {s.name.includes('ml') ? '' : 'g'}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="mt-8 space-y-2 no-print">
-                      <label className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase"><StickyNote size={14} /> Uwagi</label>
-                      <textarea className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-sm h-32
+                  <div className="flex justify-between items-center"><label className="text-xs font-bold uppercase text-slate-400">Przyprawy (g/kg)</label><button onClick={() => setNewRecipe({...newRecipe, spices: [...newRecipe.
