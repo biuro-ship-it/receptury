@@ -108,6 +108,41 @@ const App = () => {
     return recipe.spices.map(s => ({ ...s, amount: (currentTotal * s.ratio).toFixed(1) }));
   }, [currentTotal, recipe]);
 
+  // --- FUNKCJA BLOKADY 100% ---
+  const handleRatioChange = (changedId, newVal) => {
+    const meatIds = ['class1', 'class2', 'class3', 'class4'];
+    const otherIds = meatIds.filter(id => id !== changedId);
+    
+    const currentRatios = { ...newRecipe.ratios };
+    const otherTotal = otherIds.reduce((sum, id) => sum + currentRatios[id], 0);
+    
+    const nextRatios = { ...currentRatios, [changedId]: newVal };
+    
+    // Obliczamy ile zostało do podziału
+    const remaining = 1 - newVal;
+    
+    if (otherTotal > 0) {
+      // Rozdzielamy pozostałość proporcjonalnie do obecnego stanu innych suwaków
+      otherIds.forEach(id => {
+        nextRatios[id] = parseFloat(((currentRatios[id] / otherTotal) * remaining).toFixed(2));
+      });
+    } else {
+      // Jeśli inne były na zero, rozdzielamy równo
+      otherIds.forEach(id => {
+        nextRatios[id] = parseFloat((remaining / 3).toFixed(2));
+      });
+    }
+
+    // Korekta zaokrągleń (żeby suma zawsze wynosiła dokładnie 1.00)
+    const finalSum = Object.values(nextRatios).reduce((a, b) => a + b, 0);
+    if (finalSum !== 1) {
+      const diff = parseFloat((1 - finalSum).toFixed(2));
+      nextRatios[otherIds[0]] = parseFloat((nextRatios[otherIds[0]] + diff).toFixed(2));
+    }
+
+    setNewRecipe({ ...newRecipe, ratios: nextRatios });
+  };
+
   const handleSaveToDB = async () => {
     if (!newRecipe.name) return;
     const id = newRecipe.id || newRecipe.name.toLowerCase().replace(/\s+/g, '_');
@@ -115,7 +150,7 @@ const App = () => {
       await setDoc(doc(db, 'recipes', id), { ...newRecipe, id });
       setNewRecipe({ name: '', description: '', ratios: { class1: 0.25, class2: 0.25, class3: 0.25, class4: 0.25 }, grinding: {}, smoking: {}, spices: [{ id: Date.now(), name: 'Sól', ratio: 18 }] });
       alert("Receptura zapisana!");
-    } catch (err) { alert("Błąd!"); }
+    } catch (err) { alert("Błąd zapisu!"); }
   };
 
   const meatClasses = [
@@ -176,12 +211,17 @@ const App = () => {
                   </div>
                   
                   <div className="p-8 bg-slate-50 rounded-[2rem]">
-                    <h3 className="font-black text-slate-400 mb-8 uppercase text-[10px] tracking-[0.2em]">Skład & Rekomendowane Sita</h3>
+                    <h3 className="font-black text-slate-400 mb-8 uppercase text-[10px] tracking-[0.2em]">Skład & Rekomendowane Sita (Suma: 100%)</h3>
                     {meatClasses.map(c => (
                       <div key={c.id} className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 items-center border-b border-slate-200 pb-4 last:border-0">
                         <div className="space-y-2">
                           <p className="font-black text-[11px] uppercase">{c.label} ({(newRecipe.ratios[c.id] * 100).toFixed(0)}%)</p>
-                          <input type="range" min="0" max="1" step="0.05" className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none accent-blue-600" value={newRecipe.ratios[c.id]} onChange={e => setNewRecipe({...newRecipe, ratios: {...newRecipe.ratios, [c.id]: parseFloat(e.target.value)}})} />
+                          <input 
+                            type="range" min="0" max="1" step="0.01" 
+                            className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none accent-blue-600" 
+                            value={newRecipe.ratios[c.id]} 
+                            onChange={e => handleRatioChange(c.id, parseFloat(e.target.value))} 
+                          />
                         </div>
                         <div className="relative">
                             <Disc size={14} className="absolute left-3 top-3.5 text-slate-300" />
@@ -252,7 +292,7 @@ const App = () => {
                   <div className="flex justify-between items-end mb-8 px-2">
                     <h3 className="font-black text-slate-400 uppercase text-[11px] tracking-[0.2em]">Klasyfikacja i Mielenie</h3>
                     <div className="flex items-center gap-2 text-amber-500">
-                        <Disc size={14} className="animate-spin-slow" />
+                        <Disc size={14} />
                         <span className="text-[9px] font-black uppercase tracking-widest italic">Konfiguracja Siatek</span>
                     </div>
                   </div>
@@ -388,7 +428,7 @@ const App = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center text-slate-200 py-48"><Calculator size={120} className="mx-auto mb-8 opacity-5 animate-pulse" /><p className="font-black uppercase tracking-[0.4em] text-[11px]">Czekam na dane surowca</p></div>
+                  <div className="text-center text-slate-200 py-48"><Calculator size={120} className="mx-auto mb-8 opacity-5" /><p className="font-black uppercase tracking-[0.4em] text-[11px]">Czekam na dane surowca</p></div>
                 )}
               </div>
             </div>
