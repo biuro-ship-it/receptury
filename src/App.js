@@ -1,21 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { initializeApp } from 'firebase/app';
-import { 
-  getAuth, 
-  signInAnonymously, 
-  onAuthStateChanged 
-} from 'firebase/auth';
-import { 
-  getFirestore, 
-  collection, 
-  doc, 
-  setDoc, 
-  onSnapshot
-} from 'firebase/firestore';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, collection, doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { 
   Scale, Beaker, ChevronDown, Info, Calculator, 
   Settings, Plus, Trash2, Save, X, Lock, Unlock, 
-  KeyRound, StickyNote, Download
+  KeyRound, StickyNote, Download 
 } from 'lucide-react';
 
 // --- KONFIGURACJA FIREBASE ---
@@ -57,13 +47,11 @@ const App = () => {
   const [passwordInput, setPasswordInput] = useState('');
   const [authError, setAuthError] = useState('');
   const [showPrintTip, setShowPrintTip] = useState(false);
-  
   const [selectedKey, setSelectedKey] = useState('wiejska');
   const [totalTarget, setTotalTarget] = useState(0);
   const [classWeights, setClassWeights] = useState({ class1: 0, class2: 0, class3: 0, class4: 0 });
   const [classNotes, setClassNotes] = useState({ class1: '', class2: '', class3: '', class4: '' });
   const [recipeNotes, setRecipeNotes] = useState(''); 
-  
   const [newRecipe, setNewRecipe] = useState({
     name: '',
     description: '',
@@ -73,7 +61,7 @@ const App = () => {
   });
 
   useEffect(() => {
-    signInAnonymously(auth).catch(err => console.error("Błąd logowania:", err));
+    signInAnonymously(auth).catch(err => console.error("Auth error:", err));
     const unsubscribe = onAuthStateChanged(auth, setUser);
     return () => unsubscribe();
   }, []);
@@ -85,7 +73,6 @@ const App = () => {
       const dbRecipes = {};
       snapshot.forEach((doc) => { dbRecipes[doc.id] = doc.data(); });
       if (Object.keys(dbRecipes).length > 0) setRecipes(dbRecipes);
-      else setRecipes(INITIAL_RECIPES);
     });
     return () => unsubscribe();
   }, [user]);
@@ -104,141 +91,125 @@ const App = () => {
   }, [totalTarget, selectedKey, recipe]);
 
   const currentTotal = useMemo(() => {
-    return parseFloat((
-      (classWeights.class1 || 0) + 
-      (classWeights.class2 || 0) + 
-      (classWeights.class3 || 0) + 
-      (classWeights.class4 || 0)
-    ).toFixed(2));
+    return parseFloat(((classWeights.class1 || 0) + (classWeights.class2 || 0) + (classWeights.class3 || 0) + (classWeights.class4 || 0)).toFixed(2));
   }, [classWeights]);
 
   const calculatedSpices = useMemo(() => {
     if (currentTotal <= 0 || !recipe) return null;
-    return recipe.spices.map(s => ({
-      ...s,
-      amount: (currentTotal * s.ratio).toFixed(1)
-    }));
+    return recipe.spices.map(s => ({ ...s, amount: (currentTotal * s.ratio).toFixed(1) }));
   }, [currentTotal, recipe]);
 
   const handleAdminAccess = () => {
     if (passwordInput === 'admin123') {
-      setIsAdmin(true);
-      setIsAuthModalOpen(false);
-      setAuthError('');
-      setPasswordInput('');
+      setIsAdmin(true); setIsAuthModalOpen(false); setAuthError(''); setPasswordInput('');
     } else { setAuthError('Błędne hasło!'); }
   };
 
   const handleSaveToDB = async () => {
     if (!newRecipe.name || !user) return;
     const id = newRecipe.name.toLowerCase().replace(/\s+/g, '_');
-    const docRef = doc(db, 'recipes', id);
     try {
-      await setDoc(docRef, { ...newRecipe, id });
-      setIsAdmin(false);
-      setSelectedKey(id);
-      setNewRecipe({
-        name: '', description: '',
-        ratios: { class1: 0.25, class2: 0.25, class3: 0.25, class4: 0.25 },
-        spices: [{ id: Date.now(), name: '', ratio: 0 }],
-        notes: ''
-      });
-    } catch (err) { console.error("Błąd zapisu:", err); }
-  };
-
-  const handlePrint = () => {
-    setShowPrintTip(true);
-    setTimeout(() => {
-      window.print();
-      setShowPrintTip(false);
-    }, 1500);
+      await setDoc(doc(db, 'recipes', id), { ...newRecipe, id });
+      setIsAdmin(false); setSelectedKey(id);
+    } catch (err) { console.error("Save error:", err); }
   };
 
   const meatClasses = [
-    { id: 'class1', label: 'Klasa I', icon: '🥩', sub: 'Chude (szynka, schab)' },
-    { id: 'class2', label: 'Klasa II', icon: '🥓', sub: 'Tłuste (łopatka, boczek)' },
-    { id: 'class3', label: 'Klasa III', icon: '🍖', sub: 'Klej (golonka, wołowina)' },
-    { id: 'class4', label: 'Klasa IV', icon: '🧈', sub: 'Tłuszcz (podgardle, słonina)' },
+    { id: 'class1', label: 'Klasa I', icon: '🥩', sub: 'Chude' },
+    { id: 'class2', label: 'Klasa II', icon: '🥓', sub: 'Tłuste' },
+    { id: 'class3', label: 'Klasa III', icon: '🍖', sub: 'Klej' },
+    { id: 'class4', label: 'Klasa IV', icon: '🧈', sub: 'Tłuszcz' },
   ];
 
   return (
     <div className="min-h-screen bg-slate-100 p-4 md:p-8 font-sans text-slate-800 print:bg-white print:p-0">
-      <style>{`
-        @media print {
-          .no-print { display: none !important; }
-          .print-only { display: block !important; }
-          body { background: white !important; color: black !important; }
-        }
-        .print-only { display: none; }
-      `}</style>
-
-      {showPrintTip && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 border-2 border-slate-700">
-          <div className="bg-amber-500 p-2 rounded-full text-slate-900"><Info size={24} /></div>
-          <div><p className="font-bold">Przygotowywanie PDF...</p><p className="text-xs text-slate-400">Wybierz "Zapisz jako PDF".</p></div>
-        </div>
-      )}
-
+      <style>{`@media print {.no-print {display:none !important;} .print-only {display:block !important;} body {background:white !important;}} .print-only {display:none;}`}</style>
+      
       <div className="max-w-6xl mx-auto">
-        <header className="bg-slate-800 text-white rounded-3xl p-6 md:p-8 mb-8 shadow-xl border-b-8 border-slate-900 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 no-print">
+        <header className="bg-slate-800 text-white rounded-3xl p-6 mb-8 shadow-xl flex flex-col md:flex-row justify-between items-center gap-6 no-print">
           <div className="flex items-center gap-4">
-            <div className="p-4 bg-slate-700 rounded-2xl border border-slate-600"><Scale size={32} className="text-slate-300" /></div>
+            <div className="p-4 bg-slate-700 rounded-2xl"><Scale size={32} /></div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">KALKULATOR <span className="text-slate-400">MASARSKI</span></h1>
-              <p className="text-slate-400 text-xs font-semibold uppercase tracking-widest">Profesjonalna Baza Receptur</p>
+              <h1 className="text-2xl font-bold">KALKULATOR MASARSKI</h1>
+              <p className="text-slate-400 text-xs">Profesjonalna Baza Receptur</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 w-full md:w-auto">
-            <div className="flex-1 md:min-w-[240px]">
-              <div className="relative">
-                <select className="w-full bg-slate-900 border-2 border-slate-600 text-white rounded-xl py-3 px-4 appearance-none cursor-pointer font-bold" value={selectedKey} onChange={(e) => setSelectedKey(e.target.value)}>
-                  {Object.entries(recipes).map(([key, r]) => (<option key={key} value={key}>{r.name}</option>))}
-                </select>
-                <ChevronDown className="absolute right-3 top-3.5 text-slate-400 pointer-events-none" size={20} />
-              </div>
-            </div>
-            <button onClick={() => isAdmin ? setIsAdmin(false) : setIsAuthModalOpen(true)} className={`p-3.5 rounded-xl border-2 ${isAdmin ? 'bg-amber-600 border-amber-700 text-white' : 'bg-slate-900 border-slate-700 text-slate-400'}`}>
-              {isAdmin ? <Unlock size={24} /> : <Lock size={24} />}
+          <div className="flex items-center gap-3">
+            <select className="bg-slate-900 border-2 border-slate-600 text-white rounded-xl py-2 px-4 font-bold" value={selectedKey} onChange={(e) => setSelectedKey(e.target.value)}>
+              {Object.entries(recipes).map(([key, r]) => (<option key={key} value={key}>{r.name}</option>))}
+            </select>
+            <button onClick={() => isAdmin ? setIsAdmin(false) : setIsAuthModalOpen(true)} className="p-3 bg-slate-900 rounded-xl">
+              {isAdmin ? <Unlock size={20} /> : <Lock size={20} />}
             </button>
           </div>
         </header>
 
         {isAuthModalOpen && (
-          <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center">
-              <div className="w-16 h-16 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center mx-auto mb-4"><KeyRound size={32} /></div>
-              <h3 className="text-xl font-bold text-slate-800 mb-6">Panel Administratora</h3>
-              <input type="password" className="w-full border-2 border-slate-100 rounded-xl p-4 text-center text-xl font-bold mb-4" placeholder="Hasło..." value={passwordInput} onChange={e => setPasswordInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAdminAccess()} />
-              {authError && <p className="text-red-500 text-xs font-bold mb-4">{authError}</p>}
-              <div className="flex gap-3">
-                <button onClick={() => setIsAuthModalOpen(false)} className="flex-1 py-3 font-bold text-slate-400">Anuluj</button>
-                <button onClick={handleAdminAccess} className="flex-1 bg-slate-800 text-white py-3 rounded-xl font-bold">WEJDŹ</button>
-              </div>
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center">
+              <KeyRound className="mx-auto mb-4 text-slate-400" size={40} />
+              <input type="password" className="w-full border-2 rounded-xl p-3 text-center mb-4" placeholder="Hasło admina" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAdminAccess()} />
+              <button onClick={handleAdminAccess} className="w-full bg-slate-800 text-white py-3 rounded-xl font-bold">ZALOGUJ</button>
             </div>
           </div>
         )}
 
         {isAdmin ? (
-          <div className="bg-white rounded-3xl p-6 md:p-10 shadow-xl border border-slate-200">
-             <div className="flex justify-between items-center mb-10 pb-6 border-b border-slate-100">
-                <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-3"><Settings size={28} /> ZARZĄDZANIE</h2>
-                <button onClick={() => setIsAdmin(false)} className="p-2 text-slate-300 hover:text-red-500"><X size={32} /></button>
-             </div>
-             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                <div className="space-y-8">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Nazwa</label>
-                    <input type="text" className="w-full border-2 border-slate-100 rounded-xl p-4 text-xl font-bold" value={newRecipe.name} onChange={e => setNewRecipe({...newRecipe, name: e.target.value})} />
-                  </div>
-                  <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200">
-                    <h3 className="font-bold text-slate-700 mb-6 uppercase text-xs">Proporcje Mięsa (%)</h3>
-                    {meatClasses.map((c) => (
-                      <div key={c.id} className="mb-4">
-                        <div className="flex justify-between text-xs font-bold mb-1"><span>{c.label}</span><span>{(newRecipe.ratios[c.id] * 100).toFixed(0)}%</span></div>
-                        <input type="range" min="0" max="1" step="0.05" className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" value={newRecipe.ratios[c.id]} onChange={e => setNewRecipe({...newRecipe, ratios: {...newRecipe.ratios, [c.id]: parseFloat(e.target.value)}})} />
-                      </div>
-                    ))}
-                  </div>
+          <div className="bg-white rounded-3xl p-8 shadow-xl">
+            <div className="flex justify-between mb-8">
+              <h2 className="text-xl font-bold">DODAJ PRZEPIS</h2>
+              <button onClick={() => setIsAdmin(false)}><X /></button>
+            </div>
+            <div className="grid md:grid-cols-2 gap-8">
+              <input type="text" className="w-full border-2 p-4 rounded-xl font-bold" placeholder="Nazwa kiełbasy" value={newRecipe.name} onChange={e => setNewRecipe({...newRecipe, name: e.target.value})} />
+              <button onClick={handleSaveToDB} className="bg-slate-800 text-white rounded-xl font-bold">ZAPISZ W BAZIE</button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid lg:grid-cols-12 gap-8">
+            <div className="lg:col-span-7 bg-white rounded-3xl p-6 shadow-xl no-print">
+              <div className="bg-slate-800 p-8 rounded-2xl mb-8">
+                <label className="block text-slate-400 text-xs mb-2">MASA MIĘSA (KG)</label>
+                <input type="number" className="w-full bg-transparent text-white text-5xl font-bold outline-none" placeholder="0.0" onChange={e => setTotalTarget(parseFloat(e.target.value) || 0)} />
+              </div>
+              {meatClasses.map(cls => (
+                <div key={cls.id} className="flex items-center justify-between p-4 border-b">
+                  <span>{cls.icon} <b>{cls.label}</b></span>
+                  <input type="number" className="w-24 border-2 rounded-lg p-2 text-right font-bold" value={classWeights[cls.id] || ''} onChange={e => setClassWeights({...classWeights, [cls.id]: parseFloat(e.target.value) || 0})} />
                 </div>
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center"><label className="text-xs font-bold uppercase text-slate-400">Przyprawy (g/kg)</label><button onClick={() => setNewRecipe({...newRecipe, spices: [...newRecipe.
+              ))}
+              <div className="mt-8 text-3xl font-bold text-right">SUMA: {currentTotal} kg</div>
+            </div>
+
+            <div className="lg:col-span-5 bg-white rounded-3xl p-6 shadow-xl">
+              <div className="flex justify-between items-center mb-6 no-print">
+                <h2 className="font-bold flex items-center gap-2"><Beaker /> PRZEPIS</h2>
+                <button onClick={() => window.print()} className="bg-slate-100 p-2 rounded-lg"><Download size={20} /></button>
+              </div>
+              <div className="print-only text-center mb-8"><h1>RECEPTURA: {recipe.name}</h1></div>
+              {calculatedSpices ? (
+                <div className="space-y-3">
+                  <div className="p-4 bg-slate-50 rounded-xl mb-4">
+                    <h3 className="font-bold">{recipe.name}</h3>
+                    <p className="text-sm text-slate-500">{recipe.description}</p>
+                  </div>
+                  {calculatedSpices.map(s => (
+                    <div key={s.id} className={`flex justify-between p-4 rounded-xl border ${s.id === 'salt' ? 'bg-slate-800 text-white' : 'bg-white'}`}>
+                      <span>{s.name}</span>
+                      <span className="font-bold text-xl">{s.amount} {s.name.includes('ml') ? '' : 'g'}</span>
+                    </div>
+                  ))}
+                  <textarea className="w-full mt-4 p-4 bg-slate-50 rounded-xl h-32 no-print" placeholder="Twoje notatki..." value={recipeNotes} onChange={e => setRecipeNotes(e.target.value)} />
+                </div>
+              ) : (
+                <div className="text-center text-slate-300 py-20"><Calculator size={48} className="mx-auto" /><p>WPISZ WAGĘ MIĘSA</p></div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default App;
