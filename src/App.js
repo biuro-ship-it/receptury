@@ -13,13 +13,12 @@ import {
   onSnapshot
 } from 'firebase/firestore';
 import { 
-  Scale, Beaker, ChevronDown, Info, Calculator, ChevronRight, 
+  Scale, Beaker, ChevronDown, Info, Calculator, 
   Settings, Plus, Trash2, Save, X, Lock, Unlock, 
-  FileText, KeyRound, StickyNote, Download
+  KeyRound, StickyNote, Download
 } from 'lucide-react';
 
 // --- KONFIGURACJA FIREBASE ---
-// Tutaj musisz wkleić swoje dane z konsoli Firebase (Project Settings -> General)
 const firebaseConfig = {
   apiKey: "TWÓJ_API_KEY",
   authDomain: "TWÓJ_PROJEKT.firebaseapp.com",
@@ -32,7 +31,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const appId = 'kalkulator-masarski-v4';
 
 const INITIAL_RECIPES = {
   wiejska: {
@@ -82,7 +80,7 @@ const App = () => {
 
   useEffect(() => {
     if (!user) return;
-    const recipesRef = collection(db, 'recipes'); // Uproszczona ścieżka dla standardowego Firebase
+    const recipesRef = collection(db, 'recipes');
     const unsubscribe = onSnapshot(recipesRef, (snapshot) => {
       const dbRecipes = {};
       snapshot.forEach((doc) => { dbRecipes[doc.id] = doc.data(); });
@@ -123,7 +121,7 @@ const App = () => {
   }, [currentTotal, recipe]);
 
   const handleAdminAccess = () => {
-    if (passwordInput === 'admin123') { // Tutaj możesz zmienić hasło admina
+    if (passwordInput === 'admin123') {
       setIsAdmin(true);
       setIsAuthModalOpen(false);
       setAuthError('');
@@ -296,7 +294,7 @@ const App = () => {
                   <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2">
                     {newRecipe.spices.map((spice, idx) => (
                       <div key={spice.id} className="flex gap-2 p-2 bg-slate-50 rounded-xl border border-slate-100">
-                        <input className="flex-1 bg-transparent text-sm font-bold text-slate-700 outline-none" value={spice.name} onChange={e => {
+                        <input className="flex-1 bg-transparent text-sm font-bold text-slate-700 outline-none" placeholder="Składnik..." value={spice.name} onChange={e => {
                             const updated = [...newRecipe.spices];
                             updated[idx].name = e.target.value;
                             setNewRecipe({...newRecipe, spices: updated});
@@ -390,17 +388,4 @@ const App = () => {
 
                     <div className="mt-8 space-y-2 no-print">
                       <label className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase"><StickyNote size={14} /> Uwagi</label>
-                      <textarea className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-sm h-32 outline-none resize-none" placeholder="Dodaj notatkę..." value={recipeNotes} onChange={(e) => setRecipeNotes(e.target.value)} />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </section>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-export default App;
+                      <textarea className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-sm h-32
