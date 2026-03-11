@@ -4,7 +4,7 @@ import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, collection, doc, setDoc, onSnapshot, deleteDoc } from 'firebase/firestore';
 import { 
   Scale, Calculator, Settings, X, Lock, Unlock, 
-  KeyRound, Download, Plus, Trash2, Save, FileText, Edit3, Flame, Zap, Disc, ChevronRight, ClipboardList
+  KeyRound, Download, Plus, Trash2, Save, FileText, Edit3, Flame, Zap, Disc, ChevronRight
 } from 'lucide-react';
 
 // --- KONFIGURACJA FIREBASE ---
@@ -39,7 +39,6 @@ const App = () => {
   const [classWeights, setClassWeights] = useState({ class1: 0, class2: 0, class3: 0, class4: 0 });
   const [smokingNotes, setSmokingNotes] = useState('');
   
-  // ADMIN PANEL STATES
   const [compMode, setCompMode] = useState('percent'); 
   const [wInputs, setWInputs] = useState({ class1: 0, class2: 0, class3: 0, class4: 0 });
   const [isValidated, setIsValidated] = useState(false);
@@ -93,7 +92,6 @@ const App = () => {
   }, [currentTotal, recipe]);
 
   const sumPercent = useMemo(() => Math.round(Object.values(newRecipe.ratios).reduce((a, b) => a + b, 0) * 100), [newRecipe.ratios]);
-  const sumKg = useMemo(() => Object.values(wInputs).reduce((a, b) => a + b, 0).toFixed(2), [wInputs]);
 
   const convertWeights = () => {
     const total = Object.values(wInputs).reduce((a, b) => a + b, 0);
@@ -110,9 +108,9 @@ const App = () => {
     const id = newRecipe.id || newRecipe.name.toLowerCase().replace(/\s+/g, '_');
     try {
       await setDoc(doc(db, 'recipes', id), { ...newRecipe, id });
-      setNewRecipe({ name: '', description: '', ratios: { class1: 0.25, class2: 0.25, class3: 0.25, class4: 0.25 }, grinding: {}, tech: {}, spices: [{ id: Date.now(), name: 'Sól', ratio: 18 }] });
+      setIsAdmin(false);
       setIsValidated(false);
-      alert("Zapisano pomyślnie!");
+      alert("Zapisano!");
     } catch (e) { alert("Błąd zapisu!"); }
   };
 
@@ -144,9 +142,9 @@ const App = () => {
 
         {isAuthModalOpen && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl">
+            <div className="bg-white rounded-3xl p-8 max-w-sm w-full">
               <KeyRound className="mx-auto mb-4 text-blue-600" size={40} />
-              <input type="password" title="Hasło" className="w-full border-2 p-4 rounded-xl text-center text-xl font-bold mb-4 outline-none focus:border-blue-500" placeholder="Hasło (admin123)" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && passwordInput === 'admin123' && (setIsAdmin(true) || setIsAuthModalOpen(false))} />
+              <input type="password" title="Hasło" className="w-full border-2 p-4 rounded-xl text-center text-xl font-bold mb-4 outline-none" placeholder="Hasło (admin123)" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && passwordInput === 'admin123' && (setIsAdmin(true) || setIsAuthModalOpen(false))} />
               <button onClick={() => passwordInput === 'admin123' && (setIsAdmin(true) || setIsAuthModalOpen(false))} className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-lg">ZALOGUJ</button>
             </div>
           </div>
@@ -154,7 +152,6 @@ const App = () => {
 
         {isAdmin ? (
           <div className="space-y-8 no-print animate-in fade-in duration-300">
-            {/* KREATOR RECEPTURY */}
             <div className="bg-white rounded-[2.5rem] p-6 md:p-10 shadow-2xl border-t-[12px] border-amber-400">
               <div className="flex justify-between items-center mb-10">
                 <h2 className="text-2xl font-black uppercase flex items-center gap-3"><Settings className="text-amber-500" /> Edytor Receptury</h2>
@@ -166,10 +163,9 @@ const App = () => {
                   <div className="space-y-4">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Nazwa i Opis procesu</label>
                     <input type="text" className="w-full border-2 border-slate-100 rounded-2xl p-5 text-xl font-black bg-slate-50 focus:bg-white transition-all outline-none" value={newRecipe.name} onChange={e => setNewRecipe({...newRecipe, name: e.target.value})} placeholder="Nazwa wyrobu..." />
-                    <textarea className="w-full border-2 border-slate-100 rounded-2xl p-5 h-28 text-sm bg-slate-50 focus:bg-white transition-all outline-none" value={newRecipe.description} onChange={e => setNewRecipe({...newRecipe, description: e.target.value})} placeholder="Opis przygotowania (historia, miazgi itp)..." />
+                    <textarea className="w-full border-2 border-slate-100 rounded-2xl p-5 h-28 text-sm bg-slate-50 focus:bg-white transition-all outline-none" value={newRecipe.description} onChange={e => setNewRecipe({...newRecipe, description: e.target.value})} placeholder="Opis przygotowania..." />
                   </div>
                   
-                  {/* KONFIGURACJA MIĘSA */}
                   <div className="p-6 bg-slate-100 rounded-[2.5rem] border-2 border-slate-200 shadow-inner">
                     <div className="flex bg-white p-2 rounded-2xl mb-8 border-2 border-blue-500">
                       <button type="button" onClick={() => setCompMode('percent')} className={`flex-1 py-4 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${compMode === 'percent' ? 'bg-blue-600 text-white shadow-md' : 'text-blue-600'}`}>Skład %</button>
@@ -178,7 +174,7 @@ const App = () => {
 
                     <div className="flex justify-between items-center mb-8 bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
                       <span className={`font-black text-xl ${compMode === 'percent' ? (sumPercent === 100 ? 'text-green-600' : 'text-amber-600') : 'text-blue-600'}`}>
-                          {compMode === 'percent' ? `SUMA: ${sumPercent}%` : `WAGA: ${sumKg} kg`}
+                          {compMode === 'percent' ? `SUMA: ${sumPercent}%` : `WAGA: ${Object.values(wInputs).reduce((a, b) => a + b, 0).toFixed(2)} kg`}
                       </span>
                       {compMode === 'weight' ? (
                           <button type="button" onClick={convertWeights} className="bg-blue-600 text-white px-6 py-3 rounded-xl font-black text-xs uppercase shadow-xl hover:bg-blue-700">PRZELICZ NA %</button>
@@ -218,25 +214,25 @@ const App = () => {
                 </div>
 
                 <div className="space-y-8">
-                  {/* TABELA TECHNOLOGICZNA */}
                   <div className="p-8 bg-slate-900 text-white rounded-[2.5rem] shadow-xl">
                     <h3 className="font-black mb-8 uppercase text-[10px] tracking-widest text-blue-400 border-b border-blue-900 pb-4">Parametry Obróbki Technicznej</h3>
                     <div className="grid grid-cols-2 gap-6">
-                      <div className="space-y-2"><label className="text-[9px] font-black opacity-40 uppercase tracking-widest leading-none block">Osadzanie</label><input className="w-full bg-slate-800 border-none rounded-xl p-3 text-xs font-bold focus:ring-1 focus:ring-blue-500 outline-none" value={newRecipe.tech?.settling || ''} onChange={e => setNewRecipe({...newRecipe, tech: {...newRecipe.tech, settling: e.target.value}})} placeholder="Np. 2h / 12st" /></div>
-                      <div className="space-y-2"><label className="text-[9px] font-black opacity-40 uppercase tracking-widest leading-none block">Osuszanie</label><input className="w-full bg-slate-800 border-none rounded-xl p-3 text-xs font-bold focus:ring-1 focus:ring-blue-500 outline-none" value={newRecipe.tech?.drying || ''} onChange={e => setNewRecipe({...newRecipe, tech: {...newRecipe.tech, drying: e.target.value}})} placeholder="Np. 45 min" /></div>
-                      <div className="space-y-2"><label className="text-[9px] font-black opacity-40 uppercase tracking-widest leading-none block">Drewno</label><input className="w-full bg-slate-800 border-none rounded-xl p-3 text-xs font-bold focus:ring-1 focus:ring-blue-500 outline-none" value={newRecipe.tech?.wood || ''} onChange={e => setNewRecipe({...newRecipe, tech: {...newRecipe.tech, wood: e.target.value}})} placeholder="Np. Olcha" /></div>
-                      <div className="space-y-2"><label className="text-[9px] font-black opacity-40 uppercase tracking-widest leading-none block">Temp. Wędzenia</label><input className="w-full bg-slate-800 border-none rounded-xl p-3 text-xs font-bold focus:ring-1 focus:ring-blue-500 outline-none" value={newRecipe.tech?.smokeTemp || ''} onChange={e => setNewRecipe({...newRecipe, tech: {...newRecipe.tech, smokeTemp: e.target.value}})} placeholder="Np. 55°C" /></div>
-                      <div className="space-y-2 col-span-2"><label className="text-[9px] font-black opacity-40 uppercase tracking-widest leading-none block">Czas Wędzenia / Parzenia</label><input className="w-full bg-slate-800 border-none rounded-xl p-3 text-xs font-bold focus:ring-1 focus:ring-blue-500 outline-none" value={newRecipe.tech?.smokeTime || ''} onChange={e => setNewRecipe({...newRecipe, tech: {...newRecipe.tech, smokeTime: e.target.value}})} placeholder="Np. 3h wędzenia + parzenie do 68°C" /></div>
+                      <div className="space-y-2"><label className="text-[9px] font-black opacity-40 uppercase tracking-widest leading-none block">Osadzanie</label><input className="w-full bg-slate-800 border-none rounded-xl p-3 text-xs font-bold focus:ring-1 focus:ring-blue-500 outline-none" value={newRecipe.tech?.settling || ''} onChange={e => setNewRecipe({...newRecipe, tech: {...newRecipe.tech, settling: e.target.value}})} /></div>
+                      <div className="space-y-2"><label className="text-[9px] font-black opacity-40 uppercase tracking-widest leading-none block">Osuszanie</label><input className="w-full bg-slate-800 border-none rounded-xl p-3 text-xs font-bold focus:ring-1 focus:ring-blue-500 outline-none" value={newRecipe.tech?.drying || ''} onChange={e => setNewRecipe({...newRecipe, tech: {...newRecipe.tech, drying: e.target.value}})} /></div>
+                      <div className="space-y-2"><label className="text-[9px] font-black opacity-40 uppercase tracking-widest leading-none block">Drewno</label><input className="w-full bg-slate-800 border-none rounded-xl p-3 text-xs font-bold focus:ring-1 focus:ring-blue-500 outline-none" value={newRecipe.tech?.wood || ''} onChange={e => setNewRecipe({...newRecipe, tech: {...newRecipe.tech, wood: e.target.value}})} /></div>
+                      <div className="space-y-2"><label className="text-[9px] font-black opacity-40 uppercase tracking-widest leading-none block">Temp. Wędzenia</label><input className="w-full bg-slate-800 border-none rounded-xl p-3 text-xs font-bold focus:ring-1 focus:ring-blue-500 outline-none" value={newRecipe.tech?.smokeTemp || ''} onChange={e => setNewRecipe({...newRecipe, tech: {...newRecipe.tech, smokeTemp: e.target.value}})} /></div>
+                      <div className="space-y-2 col-span-2"><label className="text-[9px] font-black opacity-40 uppercase tracking-widest leading-none block">Czas Wędzenia / Parzenia</label><input className="w-full bg-slate-800 border-none rounded-xl p-3 text-xs font-bold focus:ring-1 focus:ring-blue-500 outline-none" value={newRecipe.tech?.smokeTime || ''} onChange={e => setNewRecipe({...newRecipe, tech: {...newRecipe.tech, smokeTime: e.target.value}})} /></div>
                     </div>
                   </div>
 
-                  <div className="p-8 bg-slate-50 rounded-[2.5rem] border-2 border-slate-100">
-                    <div className="flex justify-between items-center mb-6"><h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Przyprawy (g/kg)</h4> <button type="button" onClick={() => setNewRecipe({...newRecipe, spices: [...newRecipe.spices, {id:Date.now(), name:'', ratio:0}]})} className="bg-blue-600 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg shadow-blue-400/30">+ DODAJ</button></div>
+                  <div className="p-8 bg-slate-50 rounded-[2.5rem] border-2 border-slate-100 shadow-inner">
+                    <div className="flex justify-between items-center mb-6"><h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Przyprawy (g/kg)</h4> <button type="button" onClick={() => setNewRecipe({...newRecipe, spices: [...newRecipe.spices, {id:Date.now(), name:'', ratio:0}]})} className="bg-blue-600 text-white px-4 py-2 rounded-xl text-[10px] font-black">+ DODAJ</button></div>
                     <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
                       {newRecipe.spices.map((s, idx) => (
-                        <div key={s.id} className="flex gap-2 bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
+                        <div key={s.id} className="flex gap-2 bg-white p-3 rounded-2xl shadow-sm border border-slate-100 transition-all hover:border-blue-200">
                           <input className="flex-1 text-xs font-black uppercase outline-none px-2 bg-transparent" value={s.name} placeholder="Składnik..." onChange={e => { const u = [...newRecipe.spices]; u[idx].name = e.target.value; setNewRecipe({...newRecipe, spices: u}); }} />
-                          <input type="number" className="w-20 border-2 border-slate-50 rounded-xl p-2 text-center font-black text-blue-600 bg-slate-50" value={s.ratio} onChange={e => { const u = [...newRecipe.spices]; u[idx].ratio = parseFloat(e.target.value) || 0; setNewRecipe({...newRecipe, spices: u}); }} />
+                          {/* OBSŁUGA LICZB DZIESIĘTNYCH (step="0.1") */}
+                          <input type="number" step="0.1" className="w-20 border-2 border-slate-50 rounded-xl p-2 text-center font-black text-blue-600 bg-slate-50" value={s.ratio} onChange={e => { const u = [...newRecipe.spices]; u[idx].ratio = parseFloat(e.target.value) || 0; setNewRecipe({...newRecipe, spices: u}); }} />
                           <button type="button" onClick={() => setNewRecipe({...newRecipe, spices: newRecipe.spices.filter(sp => sp.id !== s.id)})} className="text-red-200 hover:text-red-500 transition-colors"><Trash2 size={20} /></button>
                         </div>
                       ))}
@@ -244,24 +240,20 @@ const App = () => {
                   </div>
                   
                   <div className="pt-6">
-                      <button type="button" onClick={handleSave} disabled={!isValidated || !newRecipe.name} className={`w-full py-7 rounded-[2.5rem] font-black shadow-2xl transition-all uppercase tracking-widest text-sm ${(!isValidated || !newRecipe.name) ? 'bg-slate-100 text-slate-300 cursor-not-allowed border-2 border-dashed border-slate-200' : 'bg-blue-600 text-white hover:bg-blue-700 hover:scale-[1.01]'}`}>
-                        <Save className="inline-block mr-3" size={24} /> ZAPISZ RECEPTURĘ W BAZIE
+                      <button type="button" onClick={handleSave} disabled={!isValidated || !newRecipe.name} className={`w-full py-7 rounded-[2rem] font-black shadow-2xl transition-all uppercase tracking-widest text-sm ${(!isValidated || !newRecipe.name) ? 'bg-slate-100 text-slate-300 cursor-not-allowed border-2 border-dashed' : 'bg-blue-600 text-white hover:bg-blue-700 hover:scale-[1.01]'}`}>
+                        <Save className="inline-block mr-3" size={24} /> ZAPISZ RECEPTURĘ
                       </button>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* LISTA RECEPTUR DO EDYCJI */}
             <div className="bg-white rounded-[2.5rem] p-8 shadow-xl">
-              <h3 className="font-black text-slate-800 mb-8 uppercase tracking-[0.2em] text-[10px] border-b pb-4">Zapisane Receptury w Bazie ({Object.keys(recipes).length})</h3>
+              <h3 className="font-black text-slate-800 mb-8 uppercase tracking-[0.2em] text-[10px] border-b pb-4">Baza Receptur</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {Object.values(recipes).map(r => (
-                  <div key={r.id} className="p-6 border-2 border-slate-50 rounded-3xl hover:border-blue-100 flex flex-col justify-between group transition-all hover:shadow-lg bg-slate-50/30">
-                    <div>
-                        <p className="font-black text-slate-900 uppercase text-xs mb-2 leading-tight">{r.name}</p>
-                        <p className="text-[9px] text-slate-400 font-bold uppercase truncate">{r.description || "Brak opisu"}</p>
-                    </div>
+                  <div key={r.id} className="p-6 border-2 border-slate-50 rounded-3xl hover:border-blue-100 flex flex-col justify-between group transition-all bg-slate-50/30">
+                    <div><p className="font-black text-slate-900 uppercase text-xs mb-2">{r.name}</p></div>
                     <div className="flex gap-2 justify-end mt-6">
                       <button onClick={() => startEdit(r)} className="p-3 bg-blue-50 text-blue-600 rounded-2xl hover:bg-blue-600 hover:text-white transition-all shadow-sm"><Edit3 size={18} /></button>
                       <button onClick={async () => { if(window.confirm("Usunąć bezpowrotnie?")) await deleteDoc(doc(db, 'recipes', r.id)); }} className="p-3 bg-red-50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all shadow-sm"><Trash2 size={18} /></button>
@@ -273,13 +265,12 @@ const App = () => {
           </div>
         ) : (
           <div className="grid lg:grid-cols-12 gap-10">
-            {/* WIDOK KALKULATORA */}
             <div className="lg:col-span-7 space-y-8">
               <div className="bg-white rounded-[3rem] p-8 md:p-12 shadow-xl border-t-[12px] border-blue-600">
                 <div className="bg-slate-900 p-12 rounded-[2.5rem] mb-12 text-white shadow-2xl relative overflow-hidden group">
                   <div className="relative z-10">
                     <label className="block text-blue-400 text-[11px] font-black uppercase tracking-[0.4em] mb-6">Masa mięsa do obróbki (kg)</label>
-                    <input type="number" className="w-full bg-transparent text-8xl font-black outline-none placeholder:text-slate-800 transition-all" placeholder="0.0" onChange={e => setTotalTarget(parseFloat(e.target.value) || 0)} />
+                    <input type="number" className="w-full bg-transparent text-8xl font-black outline-none placeholder:text-slate-800" placeholder="0.0" onChange={e => setTotalTarget(parseFloat(e.target.value) || 0)} />
                   </div>
                   <Zap className="absolute -right-16 -bottom-16 text-white/5 group-hover:text-blue-500/10 transition-all duration-700" size={300} />
                 </div>
@@ -290,8 +281,8 @@ const App = () => {
                         <span className="text-4xl bg-white p-3 rounded-2xl shadow-sm">{cls.icon}</span>
                         <div><span className="font-black text-slate-800 uppercase text-sm block mb-1 leading-none">{cls.label}</span>
                           <div className="flex gap-2">
-                            <span className="text-[10px] font-black bg-blue-100 text-blue-700 px-2 py-0.5 rounded uppercase leading-none">Sugerowane: {(totalTarget * (recipe?.ratios?.[cls.id] || 0)).toFixed(2)} kg</span>
-                            {recipe?.grinding?.[cls.id] && <span className="text-[10px] font-black bg-amber-500 text-white px-2 py-0.5 rounded uppercase tracking-tighter leading-none shadow-sm">Sito: {recipe.grinding[cls.id]}</span>}
+                            <span className="text-[10px] font-black bg-blue-100 text-blue-700 px-2 py-0.5 rounded uppercase leading-none italic">Sugerowane: {(totalTarget * (recipe?.ratios?.[cls.id] || 0)).toFixed(2)} kg</span>
+                            {recipe?.grinding?.[cls.id] && <span className="text-[10px] font-black bg-amber-500 text-white px-2 py-0.5 rounded uppercase tracking-tighter shadow-sm leading-none">Sito: {recipe.grinding[cls.id]}</span>}
                           </div>
                         </div>
                       </div>
@@ -304,19 +295,10 @@ const App = () => {
                   <span className="text-6xl font-black">{parseFloat(Object.values(classWeights).reduce((a, b) => a + b, 0)).toFixed(2)} <span className="text-2xl opacity-40 uppercase tracking-tighter">kg</span></span>
                 </div>
               </div>
-              
-              <div className="bg-white rounded-[2.5rem] p-10 shadow-xl border-t-[10px] border-amber-500 no-print">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="bg-amber-500 p-3.5 rounded-2xl text-white shadow-lg shadow-amber-500/20"><Flame size={26} /></div>
-                  <h3 className="font-black text-2xl uppercase tracking-tighter text-slate-800 italic">Dziennik produkcyjny</h3>
-                </div>
-                <textarea className="w-full border-2 border-slate-50 bg-slate-50 rounded-[2rem] p-6 h-40 text-sm italic font-medium text-slate-600 focus:bg-white focus:border-amber-400 transition-all outline-none shadow-inner" placeholder="Notatki technologa z dzisiejszego wędzenia..." value={smokingNotes} onChange={e => setSmokingNotes(e.target.value)} />
-              </div>
             </div>
 
-            {/* KARTA PRZEPISU */}
             <div className="lg:col-span-5 space-y-6">
-              <div className="bg-white rounded-[3rem] p-8 md:p-12 shadow-xl sticky top-8 border-t-[12px] border-slate-900 border-b-8 shadow-2xl overflow-hidden">
+              <div className="bg-white rounded-[3rem] p-8 md:p-12 shadow-xl sticky top-8 border-t-[12px] border-slate-900 border-b-8 shadow-2xl">
                 <div className="flex justify-between items-center mb-10 no-print border-b pb-8">
                   <h2 className="font-black text-slate-900 uppercase text-lg flex items-center gap-2 tracking-tighter leading-none"><FileText className="text-blue-600" /> Pobierz przepis</h2>
                   <button onClick={() => window.print()} className="bg-slate-900 text-white p-4 pr-5 rounded-[1.5rem] hover:bg-blue-600 transition-all shadow-xl active:scale-95 flex items-center gap-2 font-black uppercase text-xs tracking-widest leading-none"><Download size={22} /><ChevronRight size={20} className="opacity-50" /></button>
@@ -327,7 +309,6 @@ const App = () => {
                       <h3 className="font-black text-3xl text-blue-900 uppercase mb-4 tracking-tighter leading-none italic">{recipe?.name}</h3>
                       <p className="text-xs text-blue-700 leading-relaxed font-bold italic mb-6 opacity-80 leading-relaxed">"{recipe?.description}"</p>
                       
-                      {/* WYŚWIETLANIE PARAMETRÓW TECHNICZNYCH NA KARCIE */}
                       {recipe.tech && (
                           <div className="mb-6 grid grid-cols-2 gap-4 bg-white/50 p-4 rounded-2xl border border-blue-100 shadow-inner">
                               <div className="space-y-1"><span className="text-[8px] font-black opacity-30 uppercase block">Osadzanie:</span><span className="text-[10px] font-black text-blue-900">{recipe.tech.settling || '--'}</span></div>
@@ -343,7 +324,7 @@ const App = () => {
                         {meatClasses.map(cls => (
                            recipe.grinding?.[cls.id] && (
                              <div key={cls.id} className="flex justify-between text-[11px] font-black uppercase text-blue-900">
-                               <span className="opacity-50 leading-none">{cls.icon} {cls.label}:</span>
+                               <span className="opacity-50 leading-none italic">{cls.icon} {cls.label}:</span>
                                <span className="bg-blue-600 text-white px-2 py-0.5 rounded text-[9px] font-black leading-none uppercase">SITO {recipe.grinding[cls.id]}</span>
                              </div>
                            )
