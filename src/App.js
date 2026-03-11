@@ -39,8 +39,8 @@ const App = () => {
   const [classWeights, setClassWeights] = useState({ class1: 0, class2: 0, class3: 0, class4: 0 });
   const [smokingNotes, setSmokingNotes] = useState('');
   
-  // PANEL ADMINA - TRYBY I DANE
-  const [compMode, setCompMode] = useState('percent'); // 'percent' lub 'weight'
+  // ADMIN PANEL - TRYBY
+  const [compMode, setCompMode] = useState('percent'); 
   const [wInputs, setWInputs] = useState({ class1: 0, class2: 0, class3: 0, class4: 0 });
   const [isValidated, setIsValidated] = useState(false);
 
@@ -49,7 +49,6 @@ const App = () => {
     description: '',
     ratios: { class1: 0.25, class2: 0.25, class3: 0.25, class4: 0.25 },
     grinding: { class1: '', class2: '', class3: '', class4: '' },
-    smoking: { wood: '', temp: '', time: '', drying: '' },
     spices: [{ id: Date.now(), name: 'Sól', ratio: 18 }]
   });
 
@@ -81,7 +80,16 @@ const App = () => {
     }
   }, [totalTarget, recipe]);
 
-  const currentTotal = useMemo(() => Object.values(classWeights).reduce((a, b) => a + b, 0).toFixed(2), [classWeights]);
+  const currentTotal = useMemo(() => {
+    const sum = Object.values(classWeights).reduce((a, b) => a + b, 0);
+    return parseFloat(sum).toFixed(2);
+  }, [classWeights]);
+
+  const calculatedSpices = useMemo(() => {
+    if (parseFloat(currentTotal) <= 0 || !recipe) return null;
+    return recipe.spices.map(s => ({ ...s, amount: (parseFloat(currentTotal) * s.ratio).toFixed(1) }));
+  }, [currentTotal, recipe]);
+
   const sumPercent = useMemo(() => Math.round(Object.values(newRecipe.ratios).reduce((a, b) => a + b, 0) * 100), [newRecipe.ratios]);
 
   const convertWeights = () => {
@@ -92,6 +100,7 @@ const App = () => {
     setNewRecipe({ ...newRecipe, ratios: newRatios });
     setIsValidated(true);
     setCompMode('percent');
+    alert("Przeliczono na procenty!");
   };
 
   const handleSave = async () => {
@@ -101,23 +110,22 @@ const App = () => {
       await setDoc(doc(db, 'recipes', id), { ...newRecipe, id });
       setIsAdmin(false);
       setIsValidated(false);
-      alert("Zapisano!");
-    } catch (e) { alert("Błąd bazy!"); }
+      alert("Zapisano pomyślnie!");
+    } catch (e) { alert("Błąd zapisu!"); }
   };
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8 text-slate-900 font-sans">
       <style>{`@media print {.no-print {display:none !important;} .print-only {display:block !important;} body {background:white !important;}} .print-only {display:none;}`}</style>
+      
       <div className="max-w-7xl mx-auto">
-        
-        {/* NAGŁÓWEK */}
         <header className="bg-slate-900 text-white rounded-3xl p-6 mb-8 flex flex-col md:flex-row justify-between items-center gap-6 shadow-xl no-print">
           <div className="flex items-center gap-4">
-            <div className="bg-blue-600 p-3 rounded-2xl"><Scale size={30} /></div>
+            <div className="bg-blue-600 p-3 rounded-2xl shadow-lg shadow-blue-500/20"><Scale size={30} /></div>
             <h1 className="text-2xl font-black uppercase italic">Masarski Master</h1>
           </div>
           <div className="flex items-center gap-3">
-            <select className="bg-slate-800 border-none text-white rounded-xl py-2 px-4 font-bold" value={selectedKey} onChange={e => setSelectedKey(e.target.value)}>
+            <select className="bg-slate-800 border-none text-white rounded-xl py-2 px-4 font-bold outline-none" value={selectedKey} onChange={e => setSelectedKey(e.target.value)}>
               {Object.values(recipes).map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
             </select>
             <button onClick={() => setIsAuthModalOpen(true)} className="p-3 bg-slate-800 rounded-xl">
@@ -128,38 +136,40 @@ const App = () => {
 
         {isAuthModalOpen && (
           <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl p-8 max-w-sm w-full">
-              <input type="password" title="Hasło" className="w-full border-2 p-4 rounded-xl text-center text-xl font-bold mb-4 outline-none" placeholder="Hasło (admin123)" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && passwordInput === 'admin123' && (setIsAdmin(true) || setIsAuthModalOpen(false))} />
-              <button type="button" onClick={() => passwordInput === 'admin123' && (setIsAdmin(true) || setIsAuthModalOpen(false))} className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold">ZALOGUJ</button>
+            <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl">
+              <KeyRound className="mx-auto mb-4 text-blue-600" size={40} />
+              <input type="password" title="Hasło" className="w-full border-2 p-4 rounded-xl text-center text-xl font-bold mb-4 outline-none focus:border-blue-500" placeholder="Hasło (admin123)" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && passwordInput === 'admin123' && (setIsAdmin(true) || setIsAuthModalOpen(false))} />
+              <button type="button" onClick={() => passwordInput === 'admin123' && (setIsAdmin(true) || setIsAuthModalOpen(false))} className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black">ZALOGUJ</button>
+              <button type="button" onClick={() => setIsAuthModalOpen(false)} className="w-full mt-2 text-slate-400 text-[10px] font-black uppercase tracking-widest">Anuluj</button>
             </div>
           </div>
         )}
 
         {isAdmin ? (
-          <div className="bg-white rounded-[2.5rem] p-6 md:p-10 shadow-2xl border-t-[12px] border-amber-400 no-print space-y-8">
+          <div className="bg-white rounded-[2.5rem] p-6 md:p-10 shadow-2xl border-t-[12px] border-amber-400 no-print space-y-8 animate-in fade-in duration-300">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-black uppercase flex items-center gap-3"><Settings className="text-amber-500" /> KREATOR KARTY WYROBU</h2>
-              <button onClick={() => setIsAdmin(false)} className="text-red-500 p-2 rounded-full border-2 border-red-100"><X size={32} /></button>
+              <h2 className="text-2xl font-black uppercase flex items-center gap-3"><Settings className="text-amber-500" /> Kreator Receptury</h2>
+              <button onClick={() => setIsAdmin(false)} className="text-red-500 p-2 rounded-full hover:bg-red-50"><X size={32} /></button>
             </div>
 
             <div className="grid lg:grid-cols-2 gap-10">
               <div className="space-y-6">
-                <input type="text" className="w-full border-2 border-slate-100 rounded-2xl p-5 text-xl font-black bg-slate-50 focus:bg-white" value={newRecipe.name} onChange={e => setNewRecipe({...newRecipe, name: e.target.value})} placeholder="Nazwa wyrobu..." />
+                <input type="text" className="w-full border-2 border-slate-100 rounded-2xl p-5 text-xl font-black bg-slate-50 focus:bg-white transition-all" value={newRecipe.name} onChange={e => setNewRecipe({...newRecipe, name: e.target.value})} placeholder="Nazwa wyrobu..." />
                 
-                <div className="p-6 bg-slate-100 rounded-[2.5rem] border-4 border-white shadow-inner">
-                  {/* PRZEŁĄCZNIK TRYBU - BARDZIEJ WIDOCZNY */}
-                  <div className="flex bg-slate-300 p-2 rounded-2xl mb-8 border-2 border-blue-400">
-                    <button type="button" onClick={() => setCompMode('percent')} className={`flex-1 py-4 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${compMode === 'percent' ? 'bg-blue-600 text-white shadow-xl' : 'text-slate-600'}`}>Ustaw Procenty %</button>
-                    <button type="button" onClick={() => setCompMode('weight')} className={`flex-1 py-4 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${compMode === 'weight' ? 'bg-blue-600 text-white shadow-xl' : 'text-slate-600'}`}>Wpisz Wagi (kg)</button>
+                <div className="p-6 bg-slate-100 rounded-[2.5rem] border-2 border-slate-200 shadow-inner">
+                  {/* PRZEŁĄCZNIK TRYBU - JASKRAWY I WIDOCZNY */}
+                  <div className="flex bg-white p-2 rounded-2xl mb-8 border-2 border-blue-500 shadow-lg">
+                    <button type="button" onClick={() => setCompMode('percent')} className={`flex-1 py-4 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${compMode === 'percent' ? 'bg-blue-600 text-white shadow-md' : 'text-blue-600 hover:bg-blue-50'}`}>Ustaw Procenty %</button>
+                    <button type="button" onClick={() => setCompMode('weight')} className={`flex-1 py-4 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${compMode === 'weight' ? 'bg-blue-600 text-white shadow-md' : 'text-blue-600 hover:bg-blue-50'}`}>Wpisz Wagi (kg)</button>
                   </div>
 
-                  <div className="flex justify-between items-center mb-8 bg-white p-4 rounded-2xl shadow-sm">
+                  <div className="flex justify-between items-center mb-8 bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
                     <span className={`font-black text-xl ${sumPercent === 100 ? 'text-green-600' : 'text-amber-600'}`}>SUMA: {sumPercent}%</span>
                     {compMode === 'weight' ? (
                         <button type="button" onClick={convertWeights} className="bg-blue-600 text-white px-6 py-3 rounded-xl font-black text-xs uppercase shadow-xl hover:bg-blue-700">PRZELICZ NA %</button>
                     ) : (
                         <button type="button" disabled={sumPercent !== 100} onClick={() => setIsValidated(true)} className={`px-6 py-3 rounded-xl font-black text-xs uppercase transition-all shadow-md ${isValidated ? 'bg-green-600 text-white' : sumPercent === 100 ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-400'}`}>
-                            {isValidated ? 'SKŁAD ZATWIERDZONY' : 'ZATWIERDŹ 100%'}
+                            {isValidated ? 'Zatwierdzono' : 'Zapisz skład mięsa'}
                         </button>
                     )}
                   </div>
@@ -176,7 +186,7 @@ const App = () => {
                             </div>
                           ) : (
                             <div className="relative">
-                              <input type="number" className="w-full border-2 border-slate-100 p-3 rounded-xl font-black text-blue-600" value={wInputs[c.id]} onChange={e => setWInputs({...wInputs, [c.id]: parseFloat(e.target.value) || 0})} />
+                              <input type="number" className="w-full border-2 border-slate-100 p-3 rounded-xl font-black text-blue-600 outline-none focus:border-blue-400" value={wInputs[c.id]} onChange={e => setWInputs({...wInputs, [c.id]: parseFloat(e.target.value) || 0})} />
                               <span className="absolute right-3 top-3.5 text-[10px] font-black text-slate-300">KG</span>
                             </div>
                           )}
@@ -184,7 +194,7 @@ const App = () => {
                         <div className="relative">
                            <label className="text-[9px] font-black uppercase text-slate-300 mb-1 block">ZALECANE SITO</label>
                            <Disc size={12} className="absolute left-3 bottom-4 text-slate-300" />
-                           <input type="text" className="w-full border-2 border-slate-50 p-3 pl-9 rounded-xl text-[10px] font-bold uppercase focus:border-blue-400 outline-none" placeholder="Np. 8mm" value={newRecipe.grinding?.[c.id] || ''} onChange={e => setNewRecipe({...newRecipe, grinding: {...newRecipe.grinding, [c.id]: e.target.value}})} />
+                           <input type="text" className="w-full border-2 border-slate-50 p-3 pl-9 rounded-xl text-[10px] font-bold uppercase focus:border-blue-400 outline-none bg-slate-50" placeholder="Np. 8mm" value={newRecipe.grinding?.[c.id] || ''} onChange={e => setNewRecipe({...newRecipe, grinding: {...newRecipe.grinding, [c.id]: e.target.value}})} />
                         </div>
                       </div>
                     </div>
@@ -199,17 +209,17 @@ const App = () => {
                   <div className="flex justify-between items-center mb-6"><h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Przyprawy (g/kg)</h4> <button type="button" onClick={() => setNewRecipe({...newRecipe, spices: [...newRecipe.spices, {id:Date.now(), name:'', ratio:0}]})} className="bg-blue-600 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg shadow-blue-400/30">+ DODAJ</button></div>
                   <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
                     {newRecipe.spices.map((s, idx) => (
-                      <div key={s.id} className="flex gap-2 bg-white p-3 rounded-2xl shadow-sm">
-                        <input className="flex-1 text-xs font-black uppercase outline-none" value={s.name} placeholder="Składnik..." onChange={e => { const u = [...newRecipe.spices]; u[idx].name = e.target.value; setNewRecipe({...newRecipe, spices: u}); }} />
-                        <input type="number" className="w-20 border-2 border-slate-50 rounded-xl p-2 text-center font-black text-blue-600" value={s.ratio} onChange={e => { const u = [...newRecipe.spices]; u[idx].ratio = parseFloat(e.target.value) || 0; setNewRecipe({...newRecipe, spices: u}); }} />
-                        <button type="button" onClick={() => setNewRecipe({...newRecipe, spices: newRecipe.spices.filter(sp => sp.id !== s.id)})} className="text-red-200 hover:text-red-500"><Trash2 size={20} /></button>
+                      <div key={s.id} className="flex gap-2 bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
+                        <input className="flex-1 text-xs font-black uppercase outline-none px-2" value={s.name} placeholder="Składnik..." onChange={e => { const u = [...newRecipe.spices]; u[idx].name = e.target.value; setNewRecipe({...newRecipe, spices: u}); }} />
+                        <input type="number" className="w-20 border-2 border-slate-50 rounded-xl p-2 text-center font-black text-blue-600 bg-slate-50" value={s.ratio} onChange={e => { const u = [...newRecipe.spices]; u[idx].ratio = parseFloat(e.target.value) || 0; setNewRecipe({...newRecipe, spices: u}); }} />
+                        <button type="button" onClick={() => setNewRecipe({...newRecipe, spices: newRecipe.spices.filter(sp => sp.id !== s.id)})} className="text-red-300 hover:text-red-500 transition-colors"><Trash2 size={20} /></button>
                       </div>
                     ))}
                   </div>
                 </div>
                 
                 <div className="pt-6">
-                    <button type="button" onClick={handleSave} disabled={!isValidated || !newRecipe.name} className={`w-full py-7 rounded-[2.5rem] font-black shadow-2xl transition-all uppercase tracking-widest text-sm ${(!isValidated || !newRecipe.name) ? 'bg-slate-100 text-slate-300 cursor-not-allowed border-2 border-dashed' : 'bg-blue-600 text-white hover:bg-blue-700 hover:scale-[1.01]'}`}>
+                    <button type="button" onClick={handleSave} disabled={!isValidated || !newRecipe.name} className={`w-full py-7 rounded-[2rem] font-black shadow-2xl transition-all uppercase tracking-widest text-sm ${(!isValidated || !newRecipe.name) ? 'bg-slate-100 text-slate-300 cursor-not-allowed border-2 border-dashed' : 'bg-blue-600 text-white hover:bg-blue-700 hover:scale-[1.01]'}`}>
                       <Save className="inline-block mr-3" size={24} /> ZAPISZ RECEPTURĘ W BAZIE
                     </button>
                     {(!isValidated && sumPercent === 100) && <p className="text-center text-[10px] font-black text-amber-500 uppercase mt-4 animate-bounce">KLIKNIJ "ZATWIERDŹ SKŁAD" POWYŻEJ!</p>}
@@ -224,8 +234,8 @@ const App = () => {
               <div className="bg-white rounded-[3rem] p-8 md:p-12 shadow-xl border-t-[12px] border-blue-600">
                 <div className="bg-slate-900 p-12 rounded-[2.5rem] mb-12 text-white shadow-2xl relative overflow-hidden group">
                   <div className="relative z-10">
-                    <label className="block text-blue-400 text-[11px] font-black uppercase tracking-[0.4em] mb-6 leading-none">Masa mięsa do obróbki (kg)</label>
-                    <input type="number" className="w-full bg-transparent text-8xl font-black outline-none placeholder:text-slate-800" placeholder="0.0" onChange={e => setTotalTarget(parseFloat(e.target.value) || 0)} />
+                    <label className="block text-blue-400 text-[11px] font-black uppercase tracking-[0.4em] mb-6">Masa mięsa do obróbki (kg)</label>
+                    <input type="number" className="w-full bg-transparent text-8xl font-black outline-none placeholder:text-slate-800 transition-all" placeholder="0.0" onChange={e => setTotalTarget(parseFloat(e.target.value) || 0)} />
                   </div>
                   <Zap className="absolute -right-16 -bottom-16 text-white/5 group-hover:text-blue-500/10 transition-all duration-700" size={300} />
                 </div>
@@ -234,10 +244,10 @@ const App = () => {
                     <div key={cls.id} className="p-6 bg-slate-50/50 rounded-[2rem] border-2 border-transparent hover:border-blue-100 flex justify-between items-center transition-all shadow-sm">
                       <div className="flex items-center gap-4">
                         <span className="text-4xl bg-white p-3 rounded-2xl shadow-sm">{cls.icon}</span>
-                        <div><span className="font-black text-slate-800 uppercase text-sm block mb-1 leading-none">{cls.label}</span>
+                        <div><span className="font-black text-slate-800 uppercase text-sm block mb-1">{cls.label}</span>
                           <div className="flex gap-2">
-                            <span className="text-[10px] font-black bg-blue-100 text-blue-700 px-2 py-0.5 rounded uppercase leading-none">Sugerowane: {(totalTarget * (recipe?.ratios?.[cls.id] || 0)).toFixed(2)} kg</span>
-                            {recipe?.grinding?.[cls.id] && <span className="text-[10px] font-black bg-amber-500 text-white px-2 py-0.5 rounded uppercase tracking-tighter leading-none">Sito: {recipe.grinding[cls.id]}</span>}
+                            <span className="text-[10px] font-black bg-blue-100 text-blue-700 px-2 py-0.5 rounded uppercase">Sugerowane: {(totalTarget * (recipe?.ratios?.[cls.id] || 0)).toFixed(2)} kg</span>
+                            {recipe?.grinding?.[cls.id] && <span className="text-[10px] font-black bg-amber-500 text-white px-2 py-0.5 rounded uppercase tracking-tighter shadow-sm">Sito: {recipe.grinding[cls.id]}</span>}
                           </div>
                         </div>
                       </div>
@@ -247,8 +257,16 @@ const App = () => {
                 </div>
                 <div className="mt-12 p-10 bg-blue-600 rounded-[2.5rem] text-white flex justify-between items-center shadow-xl">
                   <span className="font-black uppercase text-[11px] tracking-[0.3em] opacity-60">Suma Farszu</span>
-                  <span className="text-6xl font-black">{Object.values(classWeights).reduce((a, b) => a + b, 0).toFixed(2)} <span className="text-2xl opacity-40 uppercase">kg</span></span>
+                  <span className="text-6xl font-black">{currentTotal} <span className="text-2xl opacity-40 uppercase">kg</span></span>
                 </div>
+              </div>
+              
+              <div className="bg-white rounded-[2.5rem] p-10 shadow-xl border-t-[10px] border-amber-500 no-print">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="bg-amber-500 p-3.5 rounded-2xl text-white shadow-lg shadow-amber-500/20"><Flame size={26} /></div>
+                  <h3 className="font-black text-2xl uppercase tracking-tighter text-slate-800 italic">Dziennik wędzarniczy</h3>
+                </div>
+                <textarea className="w-full border-2 border-slate-50 bg-slate-50 rounded-[2rem] p-6 h-40 text-sm italic font-medium text-slate-600 focus:bg-white focus:border-amber-400 transition-all outline-none shadow-inner" placeholder="Twoje notatki z sesji..." value={smokingNotes} onChange={e => setSmokingNotes(e.target.value)} />
               </div>
             </div>
 
@@ -257,7 +275,7 @@ const App = () => {
               <div className="bg-white rounded-[3rem] p-8 md:p-12 shadow-xl sticky top-8 border-t-[12px] border-slate-900 border-b-8 shadow-2xl overflow-hidden">
                 <div className="flex justify-between items-center mb-10 no-print border-b pb-8">
                   <h2 className="font-black text-slate-900 uppercase text-lg flex items-center gap-2 tracking-tighter leading-none"><FileText className="text-blue-600" /> Pobierz przepis</h2>
-                  <button onClick={() => window.print()} className="bg-slate-900 text-white p-4 pr-5 rounded-[1.5rem] hover:bg-blue-600 transition-all shadow-xl active:scale-95 flex items-center gap-2 font-black uppercase text-xs tracking-widest leading-none"><Download size={22} /><ChevronRight size={20} className="opacity-50" /></button>
+                  <button onClick={() => window.print()} className="bg-slate-900 text-white p-4 pr-5 rounded-[1.5rem] hover:bg-blue-600 transition-all shadow-xl active:scale-95 flex items-center gap-2 font-black uppercase text-xs tracking-widest"><Download size={22} /><ChevronRight size={20} className="opacity-50" /></button>
                 </div>
                 {recipe ? (
                   <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
@@ -270,7 +288,7 @@ const App = () => {
                            recipe.grinding?.[cls.id] && (
                              <div key={cls.id} className="flex justify-between text-[11px] font-black uppercase text-blue-900">
                                <span className="opacity-50 leading-none">{cls.label}:</span>
-                               <span className="bg-blue-600 text-white px-2 py-0.5 rounded text-[9px] font-black leading-none">SITO {recipe.grinding[cls.id]}</span>
+                               <span className="bg-blue-600 text-white px-2 py-0.5 rounded text-[9px] font-black leading-none uppercase">SITO {recipe.grinding[cls.id]}</span>
                              </div>
                            )
                         ))}
@@ -282,7 +300,7 @@ const App = () => {
                         <div key={s.id} className={`flex justify-between items-center p-6 rounded-3xl border-2 transition-all duration-300 shadow-sm ${s.id === 'salt' || s.name.toLowerCase().includes('sól') ? 'bg-slate-900 text-white border-slate-900 shadow-2xl scale-[1.02]' : 'bg-white border-slate-50 hover:border-blue-100'}`}>
                           <div className="flex flex-col">
                             <span className="font-black uppercase text-[11px] tracking-widest mb-1 leading-none italic">{s.name}</span>
-                            <span className="text-[9px] font-bold opacity-30 italic leading-none">DAWKA: {s.ratio} g/kg</span>
+                            <span className="text-[9px] font-bold opacity-30 italic leading-none uppercase">DAWKA: {s.ratio} g/kg</span>
                           </div>
                           <div className="flex items-baseline gap-1"><span className="font-black text-4xl tracking-tighter leading-none">{s.amount}</span><span className="text-[11px] font-black opacity-40 uppercase leading-none">g</span></div>
                         </div>
